@@ -5,8 +5,10 @@ from datetime import date
 
 
 @pytest.fixture
-def extractor():
-    return F1DataExtractor()
+def extractor(tmp_path):
+    temp_cache_dir = tmp_path / 'cache'
+    temp_cache_dir.mkdir()
+    return F1DataExtractor(cache_dir=str(temp_cache_dir))
 
 
 def test_get_events_schedule_type_error_year_from(extractor):
