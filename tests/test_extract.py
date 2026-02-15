@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+
 from src.extract.extractor import F1DataExtractor
 from datetime import date
 
@@ -53,3 +54,61 @@ def test_get_events_schedule(extractor, mocker):
     assert 'Season' in result.columns
     assert (result['Season'] == 2021).all()
     assert len(result) == 3
+
+
+def test_get_session_results_type_error_year(extractor):
+    with pytest.raises(TypeError,
+                       match='Variables year, round_number should be integers and session_type should be str.'):
+        extractor.get_session_results('2020', 1, 'Race')
+
+
+def test_get_session_results_type_error_round_number(extractor):
+    with pytest.raises(TypeError,
+                       match='Variables year, round_number should be integers and session_type should be str.'):
+        extractor.get_session_results(2020, '1', 'Race')
+
+
+def test_get_session_results_type_error_session_type(extractor):
+    with pytest.raises(TypeError,
+                       match='Variables year, round_number should be integers and session_type should be str.'):
+        extractor.get_session_results(2020, 1, 5)
+
+
+def test_get_session_results_value_error_session_type(extractor):
+    with pytest.raises(ValueError,
+                       match='Incorrect session_type, session_type should be FP1, FP2, FP3, Qualifying or Race.'):
+        extractor.get_session_results(2023, 2, 'Qualification')
+
+
+def test_get_session_results_value_error_year_to_small(extractor):
+    with pytest.raises(ValueError,
+                       match=f'Value year should be at least 2018 and smaller or equal current year: {date.today().year}'):
+        extractor.get_session_results(2011, 2, 'Race')
+
+
+def test_get_session_results_value_error_year_bigger(extractor):
+    with pytest.raises(ValueError,
+                       match=f'Value year should be at least 2018 and smaller or equal current year: {date.today().year}'):
+        year = date.today().year
+        extractor.get_session_results(year + 2, 2, 'Race')
+
+
+def test_get_session_results(extractor, mocker):
+    mock_session = mocker.MagicMock()
+    mock_session.results = {'DriverNumber': [81, 1], 'Abbreviation': ['PIA', 'VER']}
+
+    mock_get = mocker.patch('src.extract.extractor.fastf1.get_session', return_value=mock_session)
+    result = extractor.get_session_results(2023, 1, 'Race')
+
+    assert isinstance(result, pd.DataFrame)
+    assert 'Year' in result.columns
+    assert 'RoundNumber' in result.columns
+    assert 'SessionType' in result.columns
+    assert 'DriverNumber' in result.columns
+    assert (result['RoundNumber'] == 1).all()
+    assert (result['Year'] == 2023).all()
+    assert len(result) == 2
+
+    mock_session.load.assert_called_once_with(
+        laps=False, telemetry=False, weather=False, messages=False
+    )
