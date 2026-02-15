@@ -1,0 +1,4 @@
+pandas
+pytest
+fastf1
+pytest-mock
