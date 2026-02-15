@@ -1,13 +1,20 @@
-from csv import excel
-
+import logging
+import os
 import pandas as pd
 import fastf1
 from datetime import date
 
 
 class F1DataExtractor:
-    def __init__(self):
-        pass
+    def __init__(self, cache_dir: str = 'cache'):
+        self.logger = logging.getLogger(__name__)
+
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+            self.logger.info(f'Created cache directory at {cache_dir}')
+
+        fastf1.cache.enable_cache(cache_dir)
+        self.logger.info('FastF1 cache enabled.')
 
     def get_events_schedule(self, year_from: int, year_to: int = None) -> pd.DataFrame:
         current_year = date.today().year
@@ -25,14 +32,15 @@ class F1DataExtractor:
 
         events = []
         for year in range(year_from, year_to + 1):
+            self.logger.info(f'Fetching events schedule for {year} year.')
             try:
                 df = pd.DataFrame(fastf1.get_event_schedule(year))
                 df['Season'] = year
                 events.append(df)
             except Exception as e:
-                print(f'Error during fetching data from {year}: {e}')
-                raise
+                self.logger.exception(f'Error during fetching data from {year}: {e}')
 
         if not events: return pd.DataFrame()
         result = pd.concat(events, ignore_index=True)
+        self.logger.info('Fetching events schedule performed successfully!')
         return result
