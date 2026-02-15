@@ -13,7 +13,7 @@ class F1DataExtractor:
             os.makedirs(cache_dir)
             self.logger.info(f'Created cache directory at {cache_dir}')
 
-        fastf1.cache.enable_cache(cache_dir)
+        fastf1.Cache.enable_cache(cache_dir)
         self.logger.info('FastF1 cache enabled.')
 
     def get_events_schedule(self, year_from: int, year_to: int = None) -> pd.DataFrame:
